@@ -1,0 +1,30 @@
+import os
+from PIL import Image
+from pillow_heif import register_avif_opener
+
+register_avif_opener()
+
+rootdir = "D:\\Pictures\\iPhone"
+convdir = "D:\\converted"
+
+flag = 0
+
+for dirpath, dirnames, files in os.walk(rootdir):
+        for file in files:
+            #aae is useless
+            #HEIC can be converted
+            try:
+                if(file.split(".")[-1] == "MP4" or  file.split(".")[-1] == "MOV" or file.split(".")[-1] =="AAE" or file.split(".")[-1] == "HEIC"):
+                    pass
+                elif(file.split(".")[-1] == "AVIF"):
+                    img = Image.open(dirpath+"\\"+file)
+                    fuck = img.getexif()
+                    newfile = file.split(".")[0]+".jpg"
+                    img.convert('RGB').save(convdir+"\\"+newfile, exif = fuck)
+                    flag+=1
+                else:
+                    pass
+            except:
+                 print(file+" did not work")
+
+print(flag)

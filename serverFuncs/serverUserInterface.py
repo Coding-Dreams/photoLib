@@ -87,7 +87,7 @@ class GUI():
                 imageLabel.setPixmap(image)
                 imageLabel.setMinimumSize(400, 400)
                 imageLabel.setMaximumSize(400, 400)
-                self.gridLayout.addWidget(imageLabel)
+                self.gridLayout.addWidget(imageLabel,int(i/2), 0 if i%2==0 else 1)
 
         self.homeWidget.show()
 

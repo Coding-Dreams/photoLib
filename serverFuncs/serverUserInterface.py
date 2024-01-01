@@ -67,6 +67,8 @@ class GUI():
             self.window.quit()
 
     def addMedia(self,serverResults):
+        self.clearLayout(self.gridLayout)
+        self.homeWidget.show()
         self.mediaPlayers = []
         for i in range(0,len(serverResults)):
             if(i%2 != 0):
@@ -88,6 +90,33 @@ class GUI():
                 self.gridLayout.addWidget(imageLabel)
 
         self.homeWidget.show()
+
+    #credit to Nadeem Douba on Stackover Flow <3
+    def clearLayout(self,layout):
+        while layout.count():
+            child = layout.takeAt(layout.count()-1).widget()
+            layout.removeWidget(child)
+            child.hide()
+            child.deleteLater()
+
+
+        # child = layout.takeAt(0)
+        # while(child != None):
+        #     try:
+        #         layout.removeWidget(child)
+        #         child.deleteLater()
+        #     except:
+        #         layout.removeItem(child)
+        #     child = layout.takeAt(0)
+
+
+            #child.widget().deleteLater()
+            #del child
+            #child = layout.takeAt(0)
+        #while layout.count():
+            #child = layout.takeAt(0)
+            #layout.removeWidget(child)
+            #child.widget().deleteLater()
 
     def exec(self):
         self.homeWidget.show()
@@ -151,7 +180,6 @@ class GUI():
                     self.serverResponse.setText("Date Not in Database")
                 else:
                     self.serverResponse.setText("Date Found")
-                    print(result)
                     self.addMedia(result)
 
             #add data

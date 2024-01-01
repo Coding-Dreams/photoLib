@@ -11,7 +11,7 @@ if __name__ == '__main__':
     returnQueue = processManager.Queue()
 
     databaseProcess = mp.Process(target=serverController.controller, args=(processQueue, startEvent, returnQueue))
-    userInterfaceProcess = mp.Process(target=serverUserInterface.userInterface, args=(processQueue, startEvent, returnQueue))
+    userInterfaceProcess = mp.Process(target=serverUserInterface.main, args=(processQueue, startEvent, returnQueue))
     #bulkImporter = mp.Process(target=bulkConverter.Importer,args=(processQueue, startEvent))
 
     databaseProcess.start()

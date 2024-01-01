@@ -1,63 +1,103 @@
-import os
-#from tkinter import *
-from tkinter import ttk
-import tkinter as tk
+import PySide6 as pyS
+from PySide6 import *
+import pySide6VideoWidget as playerWidget
 import time
-from PIL import Image, ImageTk
+import os
 
-class MainGuiFrame(tk.Frame):
+class GUI():
 
-    def __init__(self, parent,processQueue,serverIntializedEvent,resultQueue,*args, **kwargs):
+    def __init__(self,processQueue,serverInitializedEvent,resultQueue):
 
+        #initialize Queues and events
         self.processQueue=processQueue
-        self.serverIntializedEvent=serverIntializedEvent
-        self.resultQueue=resultQueue
+        self.serverInitializedEvent=serverInitializedEvent
+        self.resultQueue = resultQueue
 
-        tk.Frame.__init__(self, parent, *args, **kwargs)
-        #Object Frame
-        self.parent=parent
-        self.parent.geometry("800x1000")
+        #define window
+        self.window = pyS.QtWidgets.QApplication()
 
-        #Object Label (commands)
-        self.label = tk.Label(self.parent, text="The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
-        self.label.pack()
+        #define homeWidget
+        self.homeWidget = pyS.QtWidgets.QWidget()
+        self.homeWidget.setMinimumSize(860, 800)
+        self.homeWidget.setMaximumSize(860, 800)
 
-        #Object server indicator
-        self.serverIndicator = tk.Label(self.parent, text="Server: OFF")
-        self.serverIndicator.pack()
+        self.mainGrid = pyS.QtWidgets.QBoxLayout(pyS.QtWidgets.QBoxLayout.TopToBottom, self.homeWidget)
 
-        #Object entry
-        self.entry = ttk.Entry(self.parent, width=35)
-        self.entry.focus_set()
-        self.entry.pack()
+        #define grid for entry and button
+        self.gridForButton = pyS.QtWidgets.QBoxLayout(pyS.QtWidgets.QBoxLayout.LeftToRight)
+        self.mainGrid.addLayout(self.gridForButton)
 
-        #object serverOutput dialogue
-        self.serverOutput = tk.Label(self.parent,text="")
-        self.serverOutput.pack()
+        #define userEntry box
+        self.entry = pyS.QtWidgets.QLineEdit()
 
-        #Object button
-        ttk.Button(master=self.parent, text = "Send Command", width=20, command=self.buttonPress).pack(pady=20)
+        self.gridForButton.addWidget(self.entry,2)
 
-        #WIP
-        # #create verticle Scroll Bar for gallery frame
-        # self.verticleBar = tk.Scrollbar(self.parent, orient="vertical").pack(side="right",fill="y")
+        #define Button
+        self.button = pyS.QtWidgets.QPushButton("Send Command")
+        self.button.clicked.connect(self.buttonClick)
+        self.gridForButton.addWidget(self.button,1)
 
-        # #create gallary frame
-        # self.galFrame=tk.Frame(self.parent, width=750, height=750, yscrollcommand = self.verticleBar).pack(expand=True, fill="both")
+        #define text box for server Status 
+        self.serverStatus = pyS.QtWidgets.QLabel("Server Off")
+        self.gridForButton.addWidget(self.serverStatus)
 
-    def buttonPress(self):
-        userInput = self.entry.get()
-        self.entry.delete(0,"end")
-        if(userInput ==""):
-            return
+        #define text box for server Responses
+        self.serverResponse = pyS.QtWidgets.QLabel("The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
+        self.mainGrid.addWidget(self.serverResponse,2, pyS.QtCore.Qt.AlignTop)
+
+
+        #define array of Media objects
+        self.mediaPlayers=[]
+
+        self.layout = pyS.QtWidgets.QHBoxLayout(self.homeWidget)
+        self.scrollArea = pyS.QtWidgets.QScrollArea(self.homeWidget)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = pyS.QtWidgets.QWidget()
+        self.gridLayout = pyS.QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
+        #self.gridLayout.
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.mainGrid.addWidget(self.scrollArea,pyS.QtCore.Qt.AlignTop)
+
+
+    def buttonClick(self):
+        userInput = self.entry.text()
+        self.entry.setText("")
         killValue=self.orderServer(userInput)
         if(killValue):
-            self.parent.destroy()
+            self.window.quit()
+
+    def addMedia(self,serverResults):
+        self.mediaPlayers = []
+        for i in range(0,len(serverResults)):
+            if(i%2 != 0):
+                self.gridLayout.setRowMinimumHeight(int(i/2),400)
+
+            if serverResults[i][0].split(".")[-1]=="MP4":
+
+                self.mediaPlayers.append(playerWidget.VideoPlayer(serverResults[i][0]))
+                self.gridLayout.addWidget(self.mediaPlayers[-1].getWidget(),int(i/2), 0 if i%2==0 else 1)
+                
+            else:
+
+                imageLabel = pyS.QtWidgets.QLabel()
+                image = pyS.QtGui.QPixmap(serverResults[i][0].replace("\\","/"))
+                image = image.scaled(400,400, pyS.QtCore.Qt.KeepAspectRatio)
+                imageLabel.setPixmap(image)
+                imageLabel.setMinimumSize(400, 400)
+                imageLabel.setMaximumSize(400, 400)
+                self.gridLayout.addWidget(imageLabel)
+
+        self.homeWidget.show()
+
+    def exec(self):
+        self.homeWidget.show()
+        self.window.exec()
+
 
     def orderServer(self,entry:str):
         guiInput = entry.split(",")
         command=guiInput[0].upper()
-        serverFlag = self.serverIntializedEvent.is_set()
+        serverFlag = self.serverInitializedEvent.is_set()
         if(command == ""):
             pass
         else:
@@ -71,9 +111,9 @@ class MainGuiFrame(tk.Frame):
                     if(os.path.isfile(fileLocation+fileName+"-dates.pkl") and os.path.isfile(fileLocation+fileName+"-faces.pk1")):
                         self.processQueue.put(["O", fileLocation, fileName])
                         time.sleep(2)
-                    self.serverOutput.configure(text="Successfully initalized")
+                    self.serverResponse.setText("Successfully initalized")
                 except:
-                    self.serverOutput.configure(text="Input failed, try again!")
+                    self.serverResponse.setText("Input failed, try again!")
                     pass
 
             #quit function
@@ -87,9 +127,9 @@ class MainGuiFrame(tk.Frame):
                 filesaveName = guiInput[2]
                 if(os.path.exists(filesaveLocation)):
                     self.processQueue.put(["S",filesaveLocation,filesaveName])
-                    self.serverOutput.configure(text="Save Successful")
+                    self.serverResponse.setText("Save Successful")
                 else:
-                    self.serverOutput.configure(text="USER ERROR: Invalid file path")
+                    self.serverResponse.setText("USER ERROR: Invalid file path")
 
             #Find face function
             elif(command == "FF" and serverFlag):
@@ -97,10 +137,10 @@ class MainGuiFrame(tk.Frame):
                 self.processQueue.put(["FF",userRequest,None])
                 result = self.resultQueue.get()
                 if(result == None):
-                    self.serverOutput.configure(text="Face not in database")
+                    self.serverResponse.setText("Face not in database")
                 else:
-                    self.serverOutput.configure(text=result)
-                    #self.guiGallery(result)
+                    self.serverResponse.setText("Face Found")
+                    self.addMedia(result)
 
             #Find date function
             elif(command == "FD" and serverFlag):
@@ -108,47 +148,196 @@ class MainGuiFrame(tk.Frame):
                 self.processQueue.put(["FD",userRequest,None])
                 result = self.resultQueue.get()
                 if(result == None):
-                    self.serverOutput.configure(text="Date Not in Database")
+                    self.serverResponse.setText("Date Not in Database")
                 else:
-                    self.serverOutput.configure(text=result)
-                    #self.guiGallery(result)
+                    self.serverResponse.setText("Date Found")
+                    print(result)
+                    self.addMedia(result)
 
             #add data
             elif(command == "AD" and serverFlag):
-                self.serverOutput.configure(text="User Function not yet implemented, suck it lol")
+                self.serverResponse.setText("User Function not yet implemented, suck it lol")
 
             else:
-                self.serverOutput.configure(text="Invalid command try again!")
+                self.serverResponse.setText("Invalid command try again!")
 
 
-        serverFlag = self.serverIntializedEvent.is_set()
+        serverFlag = self.serverInitializedEvent.is_set()
         if(serverFlag):
-            self.serverIndicator.configure(text="Server: ON")
+            self.serverStatus.setText("Server: ON")
         else:
-            self.serverIndicator.configure(text="Server: OFF")
+            self.serverStatus.setText("Server: OFF")
 
         
 
         #False as we want killValue to be false
         return False
 
-    #WIP
-    # def guiGallery(self, result):
-    #     img_list=[ImageTk.PhotoImage(Image.open(x[0])) for x in result]
-    #     for i in range(int(len(result)/3)): # Number of rows
-    #         for j in range(3): # Number of columns
-    #             lbl = tk.Label(self.parent,image=img_list[3*i+j])
-    #             lbl.grid(row=i,column=j)
+
+
+
+def main(processQueue, startEvent, returnQueue):
+    serverGUI = GUI(processQueue, startEvent, returnQueue)
+    serverGUI.exec()
+
+
+
+
+
+
+
+
+
+
+# import os
+# #from tkinter import *
+# from tkinter import ttk
+# import tkinter as tk
+# import time
+# from PIL import Image, ImageTk
+
+# class MainGuiFrame(tk.Frame):
+
+#     def __init__(self, parent,processQueue,serverIntializedEvent,resultQueue,*args, **kwargs):
+
+#         self.processQueue=processQueue
+#         self.serverIntializedEvent=serverIntializedEvent
+#         self.resultQueue=resultQueue
+
+#         tk.Frame.__init__(self, parent, *args, **kwargs)
+#         #Object Frame
+#         self.parent=parent
+#         self.parent.geometry("800x1000")
+
+#         #Object Label (commands)
+#         self.label = tk.Label(self.parent, text="The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
+#         self.label.pack()
+
+#         #Object server indicator
+#         self.serverIndicator = tk.Label(self.parent, text="Server: OFF")
+#         self.serverIndicator.pack()
+
+#         #Object entry
+#         self.entry = ttk.Entry(self.parent, width=35)
+#         self.entry.focus_set()
+#         self.entry.pack()
+
+#         #object serverOutput dialogue
+#         self.serverOutput = tk.Label(self.parent,text="")
+#         self.serverOutput.pack()
+
+#         #Object button
+#         ttk.Button(master=self.parent, text = "Send Command", width=20, command=self.buttonPress).pack(pady=20)
+
+#         #WIP
+#         # #create verticle Scroll Bar for gallery frame
+#         # self.verticleBar = tk.Scrollbar(self.parent, orient="vertical").pack(side="right",fill="y")
+
+#         # #create gallary frame
+#         # self.galFrame=tk.Frame(self.parent, width=750, height=750, yscrollcommand = self.verticleBar).pack(expand=True, fill="both")
+
+#     def buttonPress(self):
+#         userInput = self.entry.get()
+#         self.entry.delete(0,"end")
+#         if(userInput ==""):
+#             return
+#         killValue=self.orderServer(userInput)
+#         if(killValue):
+#             self.parent.destroy()
+
+#     def orderServer(self,entry:str):
+#         guiInput = entry.split(",")
+#         command=guiInput[0].upper()
+#         serverFlag = self.serverIntializedEvent.is_set()
+#         if(command == ""):
+#             pass
+#         else:
+#             if(command=="N" and not serverFlag):
+#                 self.processQueue.put(["N", None, None])
+#                 time.sleep(2)
+#             elif(command == "O" and not serverFlag):
+#                 try:
+#                     fileLocation= guiInput[1]
+#                     fileName = guiInput[2]
+#                     if(os.path.isfile(fileLocation+fileName+"-dates.pkl") and os.path.isfile(fileLocation+fileName+"-faces.pk1")):
+#                         self.processQueue.put(["O", fileLocation, fileName])
+#                         time.sleep(2)
+#                     self.serverOutput.configure(text="Successfully initalized")
+#                 except:
+#                     self.serverOutput.configure(text="Input failed, try again!")
+#                     pass
+
+#             #quit function
+#             elif(command == "Q" and serverFlag):
+#                 self.processQueue.put(["Q",None,None])
+#                 return True
+
+#             #save function
+#             elif(command == "S" and serverFlag):
+#                 filesaveLocation = guiInput[1]
+#                 filesaveName = guiInput[2]
+#                 if(os.path.exists(filesaveLocation)):
+#                     self.processQueue.put(["S",filesaveLocation,filesaveName])
+#                     self.serverOutput.configure(text="Save Successful")
+#                 else:
+#                     self.serverOutput.configure(text="USER ERROR: Invalid file path")
+
+#             #Find face function
+#             elif(command == "FF" and serverFlag):
+#                 userRequest = guiInput[1]
+#                 self.processQueue.put(["FF",userRequest,None])
+#                 result = self.resultQueue.get()
+#                 if(result == None):
+#                     self.serverOutput.configure(text="Face not in database")
+#                 else:
+#                     self.serverOutput.configure(text=result)
+#                     #self.guiGallery(result)
+
+#             #Find date function
+#             elif(command == "FD" and serverFlag):
+#                 userRequest = guiInput[1]
+#                 self.processQueue.put(["FD",userRequest,None])
+#                 result = self.resultQueue.get()
+#                 if(result == None):
+#                     self.serverOutput.configure(text="Date Not in Database")
+#                 else:
+#                     self.serverOutput.configure(text=result)
+#                     #self.guiGallery(result)
+
+#             #add data
+#             elif(command == "AD" and serverFlag):
+#                 self.serverOutput.configure(text="User Function not yet implemented, suck it lol")
+
+#             else:
+#                 self.serverOutput.configure(text="Invalid command try again!")
+
+
+#         serverFlag = self.serverIntializedEvent.is_set()
+#         if(serverFlag):
+#             self.serverIndicator.configure(text="Server: ON")
+#         else:
+#             self.serverIndicator.configure(text="Server: OFF")
+
+        
+
+#         #False as we want killValue to be false
+#         return False
+
+#     #WIP
+#     # def guiGallery(self, result):
+#     #     img_list=[ImageTk.PhotoImage(Image.open(x[0])) for x in result]
+#     #     for i in range(int(len(result)/3)): # Number of rows
+#     #         for j in range(3): # Number of columns
+#     #             lbl = tk.Label(self.parent,image=img_list[3*i+j])
+#     #             lbl.grid(row=i,column=j)
 
     
 
-def userInterface(processQueue, serverIntializedEvent, resultQueue):
+# def userInterface(processQueue, serverIntializedEvent, resultQueue):
 
-    win = tk.Tk()
-    MainGuiFrame(win,processQueue,serverIntializedEvent,resultQueue).pack(expand=True)
-    win.mainloop()
-
-
+#     win = tk.Tk()
+#     MainGuiFrame(win,processQueue,serverIntializedEvent,resultQueue).pack(expand=True)
+#     win.mainloop()
 
 
 
@@ -162,31 +351,33 @@ def userInterface(processQueue, serverIntializedEvent, resultQueue):
 
 
 
-    # win.geometry("750x1000")
 
-    # label = Label(win, text="The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
-    # label.pack()
 
-    # serverIndicator = Label(win, text="Server: OFF")
-    # serverIndicator.pack()
+#     # win.geometry("750x1000")
 
-    # entry = ttk.Entry(win, width=35)
-    # entry.focus_set()
-    # entry.pack()
+#     # label = Label(win, text="The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
+#     # label.pack()
 
-    # serverOutput = Label(win,text="")
-    # serverOutput.pack()
+#     # serverIndicator = Label(win, text="Server: OFF")
+#     # serverIndicator.pack()
 
-    # def buttonPress():
-    #     userInput = entry.get()
-    #     entry.delete(0,"end")
-    #     if(userInput ==""):
-    #         return
-    #     killValue=orderServer(userInput,serverIndicator,serverOutput,processQueue, serverIntializedEvent, resultQueue,win)
-    #     if(killValue):
-    #         win.destroy()
+#     # entry = ttk.Entry(win, width=35)
+#     # entry.focus_set()
+#     # entry.pack()
 
-    # ttk.Button(master=win, text = "Send Command", width=20, command=buttonPress).pack(pady=20)
+#     # serverOutput = Label(win,text="")
+#     # serverOutput.pack()
+
+#     # def buttonPress():
+#     #     userInput = entry.get()
+#     #     entry.delete(0,"end")
+#     #     if(userInput ==""):
+#     #         return
+#     #     killValue=orderServer(userInput,serverIndicator,serverOutput,processQueue, serverIntializedEvent, resultQueue,win)
+#     #     if(killValue):
+#     #         win.destroy()
+
+#     # ttk.Button(master=win, text = "Send Command", width=20, command=buttonPress).pack(pady=20)
 
     
 
@@ -198,89 +389,89 @@ def userInterface(processQueue, serverIntializedEvent, resultQueue):
 
 
 
-    # while(not serverIntializedEvent.is_set()):
-    #     userHistory = input("Would you like to use a database or create a new one? (n = new, o = old)").upper()
-    #     if(userHistory=="N"):
-    #         processQueue.put(["N", None, None])
-    #     elif(userHistory == "O"):
-    #         try:
-    #             fileLocation= input("What is the file location (don't forget \\ at end!)")
-    #             fileName = input("What is the file name?")
-    #             if(os.path.isfile(fileLocation+fileName+"-dates.pkl") and os.path.isfile(fileLocation+fileName+"-faces.pk1")):
-    #                 processQueue.put(["O", fileLocation, fileName])
-    #             print("Bad input, try again")
-    #         except:
-    #             print("Input failed, try again!")
-    #             pass
-    #     else:
-    #         print("Bad input, try again")
+#     # while(not serverIntializedEvent.is_set()):
+#     #     userHistory = input("Would you like to use a database or create a new one? (n = new, o = old)").upper()
+#     #     if(userHistory=="N"):
+#     #         processQueue.put(["N", None, None])
+#     #     elif(userHistory == "O"):
+#     #         try:
+#     #             fileLocation= input("What is the file location (don't forget \\ at end!)")
+#     #             fileName = input("What is the file name?")
+#     #             if(os.path.isfile(fileLocation+fileName+"-dates.pkl") and os.path.isfile(fileLocation+fileName+"-faces.pk1")):
+#     #                 processQueue.put(["O", fileLocation, fileName])
+#     #             print("Bad input, try again")
+#     #         except:
+#     #             print("Input failed, try again!")
+#     #             pass
+#     #     else:
+#     #         print("Bad input, try again")
 
-    # #replace input w/ queue of arrays, each array has command (char) + filename/whatever else is needed!
-    # while(serverIntializedEvent):
-    #     userInput = input("Please enter your desired command: [h] help").upper()
+#     # #replace input w/ queue of arrays, each array has command (char) + filename/whatever else is needed!
+#     # while(serverIntializedEvent):
+#     #     userInput = input("Please enter your desired command: [h] help").upper()
 
-    #     #help function
-    #     if(userInput == "H"):
-    #         print("The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
+#     #     #help function
+#     #     if(userInput == "H"):
+#     #         print("The following commands are: q(quit), s(save), ff(Find Face), fd(Find Date), ad(Add data)")
 
-    #     #quit function
-    #     elif(userInput == "Q"):
-    #         processQueue.put(["Q",None,None])
+#     #     #quit function
+#     #     elif(userInput == "Q"):
+#     #         processQueue.put(["Q",None,None])
 
-    #     #save function
-    #     elif(userInput == "S"):
-    #         filesaveLocation = input("Enter location of save")+"\\"
-    #         filesaveName = input("Name of file")
-    #         if(os.path.exists(filesaveLocation)):
-    #             processQueue.put(["S",filesaveLocation,filesaveName])
-    #         else:
-    #             print("USER ERROR: Invalid file path")
+#     #     #save function
+#     #     elif(userInput == "S"):
+#     #         filesaveLocation = input("Enter location of save")+"\\"
+#     #         filesaveName = input("Name of file")
+#     #         if(os.path.exists(filesaveLocation)):
+#     #             processQueue.put(["S",filesaveLocation,filesaveName])
+#     #         else:
+#     #             print("USER ERROR: Invalid file path")
 
-    #     #Find face function
-    #     elif(userInput == "FF"):
-    #         userRequest = input("Please enter the face of the desired person: ")
-    #         processQueue.put(["FF",userRequest,None])
-    #         result = resultQueue.get()
-    #         if(result == None):
-    #             print("Face not in database")
-    #         else:
-    #             print(result)
+#     #     #Find face function
+#     #     elif(userInput == "FF"):
+#     #         userRequest = input("Please enter the face of the desired person: ")
+#     #         processQueue.put(["FF",userRequest,None])
+#     #         result = resultQueue.get()
+#     #         if(result == None):
+#     #             print("Face not in database")
+#     #         else:
+#     #             print(result)
 
-    #     #Find date function
-    #     elif(userInput == "FD"):
-    #         userRequest = input("Please Enter the date (YEAR[XXXX]-MONTH[XX]-DAY[XX]): ")
-    #         processQueue.put(["FD",userRequest,None])
+#     #     #Find date function
+#     #     elif(userInput == "FD"):
+#     #         userRequest = input("Please Enter the date (YEAR[XXXX]-MONTH[XX]-DAY[XX]): ")
+#     #         processQueue.put(["FD",userRequest,None])
 
-    #     #add data
-    #     elif(userInput == "AD"):
-    #         print("User Function not yet implemented, suck it lol")
+#     #     #add data
+#     #     elif(userInput == "AD"):
+#     #         print("User Function not yet implemented, suck it lol")
 
-    #     else:
-    #         print("Invalid command try again!")
-
-
+#     #     else:
+#     #         print("Invalid command try again!")
 
 
 
 
-# if(userInput == "f"):
-#     userRequest = input("Please enter the face of the desired person: ")
-#     result = serverObject.getFace(userRequest)
-#     if(result == None):
-#         print("Person not found")
-#     else:
-#         print(result)
-# elif(userInput == "q"):
-#     print("Stopping Server")
-#     break
-# elif(userInput == "s"):
-#     while(True):
-#         try:
-#             filesaveLocation = input("Enter location of save")
-#             filesaveName = input("Name of file")
-#             serverObject.saveTable(filesaveName, filesaveLocation)
-#             break
-#         except:
-#             print("Save failed, please try again!")
-# else:
-#     print("Invalid command try again!")
+
+
+# # if(userInput == "f"):
+# #     userRequest = input("Please enter the face of the desired person: ")
+# #     result = serverObject.getFace(userRequest)
+# #     if(result == None):
+# #         print("Person not found")
+# #     else:
+# #         print(result)
+# # elif(userInput == "q"):
+# #     print("Stopping Server")
+# #     break
+# # elif(userInput == "s"):
+# #     while(True):
+# #         try:
+# #             filesaveLocation = input("Enter location of save")
+# #             filesaveName = input("Name of file")
+# #             serverObject.saveTable(filesaveName, filesaveLocation)
+# #             break
+# #         except:
+# #             print("Save failed, please try again!")
+# # else:
+# #     print("Invalid command try again!")

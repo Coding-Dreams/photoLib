@@ -49,6 +49,9 @@ class GUI():
         #define array of Media objects
         self.mediaPlayers=[]
 
+        self.initScrollArea()
+
+    def initScrollArea(self):
         self.layout = pyS.QtWidgets.QHBoxLayout(self.homeWidget)
         self.scrollArea = pyS.QtWidgets.QScrollArea(self.homeWidget)
         self.scrollArea.setWidgetResizable(True)
@@ -58,7 +61,6 @@ class GUI():
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.mainGrid.addWidget(self.scrollArea,pyS.QtCore.Qt.AlignTop)
 
-
     def buttonClick(self):
         userInput = self.entry.text()
         self.entry.setText("")
@@ -67,7 +69,13 @@ class GUI():
             self.window.quit()
 
     def addMedia(self,serverResults):
-        self.clearLayout(self.gridLayout)
+        #delete widget and rebuild when new images called
+        self.mainGrid.removeWidget(self.scrollArea)
+        self.scrollArea.deleteLater()
+        self.scrollArea=None
+        self.initScrollArea()
+
+        #
         self.homeWidget.show()
         self.mediaPlayers = []
         for i in range(0,len(serverResults)):
@@ -89,34 +97,7 @@ class GUI():
                 imageLabel.setMaximumSize(400, 400)
                 self.gridLayout.addWidget(imageLabel,int(i/2), 0 if i%2==0 else 1)
 
-        self.homeWidget.show()
-
-    #credit to Nadeem Douba on Stackover Flow <3
-    def clearLayout(self,layout):
-        while layout.count():
-            child = layout.takeAt(layout.count()-1).widget()
-            layout.removeWidget(child)
-            child.hide()
-            child.deleteLater()
-
-
-        # child = layout.takeAt(0)
-        # while(child != None):
-        #     try:
-        #         layout.removeWidget(child)
-        #         child.deleteLater()
-        #     except:
-        #         layout.removeItem(child)
-        #     child = layout.takeAt(0)
-
-
-            #child.widget().deleteLater()
-            #del child
-            #child = layout.takeAt(0)
-        #while layout.count():
-            #child = layout.takeAt(0)
-            #layout.removeWidget(child)
-            #child.widget().deleteLater()
+            self.homeWidget.show()
 
     def exec(self):
         self.homeWidget.show()

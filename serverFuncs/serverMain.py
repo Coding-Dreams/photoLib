@@ -12,14 +12,16 @@ if __name__ == '__main__':
 
     databaseProcess = mp.Process(target=serverController.controller, args=(processQueue, startEvent, returnQueue))
     userInterfaceProcess = mp.Process(target=serverUserInterface.main, args=(processQueue, startEvent, returnQueue))
-    #bulkImporter = mp.Process(target=bulkConverter.Importer,args=(processQueue, startEvent))
+    bulkImporter = mp.Process(target=bulkConverter.Importer,args=(processQueue, startEvent))
 
     databaseProcess.start()
     userInterfaceProcess.start()
-    #bulkImporter.start()
+    bulkImporter.start()
+
+    bulkImporter.join()
+    print("MAIN: BULK IMPORTER DONE")
 
     databaseProcess.join()
     userInterfaceProcess.join()
-    #bulkImporter.join()
 
-    print("MAIN SHUTTING DOWN")
+    print("MAIN: SHUTTING DOWN")

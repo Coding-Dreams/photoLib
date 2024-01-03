@@ -47,7 +47,7 @@ def importer(dirpath, file, convdir):
     elif(fileType == "MP4"):
         input = ffm.probe(dirpath+"\\"+file)
         try:              
-            date = input["format"]["tags"]["creation_time"].split("T")[0]
+            date = input["format"]["tags"]["com.apple.quicktime.creationdate"].split("T")[0]
         except KeyError:
             date = "1900-01-01"
         except:
@@ -77,11 +77,15 @@ def importer(dirpath, file, convdir):
 
         #try to get date, if DNE make default (cannot be NULL)
         try:              
-            date = input["format"]["tags"]["creation_time"].split("T")[0]
-        except KeyError:
-            date = "1900-01-01"
+            date = input["format"]["tags"]["com.apple.quicktime.creationdate"].split("T")[0]
         except:
-            print("ERROR DUNGOOFED")
+            try:
+                date = input["format"]["tags"]["creation_time"].split("T")[0]
+            except KeyError:
+                print(f"{file} does not have date")
+                date = "1900-01-01"
+            except:
+                print("ERROR DUNGOOFED")
 
         dateSeg = date.split("-")
 
@@ -145,7 +149,7 @@ def getDate(path):
     #buggy, find a better way
     try:
         image = open(path,'rb')
-        exif = exifread.process_file(image, strict=True)
+        exif = exifread.process_file(image, strict=False)
         image.close()
         return str(exif['EXIF DateTimeOriginal']).replace(":","-").split(" ")[0]
     except:
@@ -157,10 +161,12 @@ def getDate(path):
             else:
                 if exif.get(36867) != None:
                     return exif.get(36867)
+                elif exif.get(36868) != None:
+                    return exif.get(36868)
                 elif exif.get(306) != None:
                     return exif.get(306).split(" ")[0].replace(":","-")
                 else:
-                    return exif.get(36868)
+                    return "1900-01-01"
         except KeyError:
             return "1900-01-01"
         except AttributeError:

@@ -3,10 +3,14 @@ from PySide6 import *
 import pySide6VideoWidget as playerWidget
 import time
 import os
+import math
+#import multiprocessing as mp
 
 class GUI():
 
     def __init__(self,processQueue,serverInitializedEvent,resultQueue):
+
+        self.NUMROWS = 3
 
         #initialize Queues and events
         self.processQueue=processQueue
@@ -18,8 +22,8 @@ class GUI():
 
         #define homeWidget
         self.homeWidget = pyS.QtWidgets.QWidget()
-        self.homeWidget.setMinimumSize(860, 800)
-        self.homeWidget.setMaximumSize(860, 800)
+        self.homeWidget.setMinimumSize(1260, 800)
+        self.homeWidget.setMaximumSize(1260, 800)
 
         self.mainGrid = pyS.QtWidgets.QBoxLayout(pyS.QtWidgets.QBoxLayout.TopToBottom, self.homeWidget)
 
@@ -52,7 +56,7 @@ class GUI():
         self.initScrollArea()
 
     def initScrollArea(self):
-        self.layout = pyS.QtWidgets.QHBoxLayout(self.homeWidget)
+        #self.layout = pyS.QtWidgets.QHBoxLayout(self.homeWidget)
         self.scrollArea = pyS.QtWidgets.QScrollArea(self.homeWidget)
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = pyS.QtWidgets.QWidget()
@@ -78,14 +82,19 @@ class GUI():
         #
         self.homeWidget.show()
         self.mediaPlayers = []
+        posInRow=0
         for i in range(0,len(serverResults)):
-            if(i%2 != 0):
-                self.gridLayout.setRowMinimumHeight(int(i/2),400)
+            if(posInRow == self.NUMROWS):
+                posInRow = 0
+
+            #as far as I know this line is superfulous idk, it doesn't change anything anymore
+            # if(i%self.NUMROWS != 0):
+            #     self.gridLayout.setRowMinimumHeight(math.trunc(i/self.NUMROWS),400)
 
             if serverResults[i][0].split(".")[-1]=="MP4":
 
                 self.mediaPlayers.append(playerWidget.VideoPlayer(serverResults[i][0]))
-                self.gridLayout.addWidget(self.mediaPlayers[-1].getWidget(),int(i/2), 0 if i%2==0 else 1)
+                self.gridLayout.addWidget(self.mediaPlayers[-1].getWidget(),math.trunc(i/self.NUMROWS), posInRow)
                 
             else:
 
@@ -95,9 +104,9 @@ class GUI():
                 imageLabel.setPixmap(image)
                 imageLabel.setMinimumSize(400, 400)
                 imageLabel.setMaximumSize(400, 400)
-                self.gridLayout.addWidget(imageLabel,int(i/2), 0 if i%2==0 else 1)
+                self.gridLayout.addWidget(imageLabel,math.trunc(i/self.NUMROWS), posInRow)
 
-            self.homeWidget.show()
+            posInRow+=1
 
     def exec(self):
         self.homeWidget.show()
@@ -113,14 +122,14 @@ class GUI():
         else:
             if(command=="N" and not serverFlag):
                 self.processQueue.put(["N", None, None])
-                time.sleep(2)
+                time.sleep(1)
             elif(command == "O" and not serverFlag):
                 try:
                     fileLocation= guiInput[1]
                     fileName = guiInput[2]
                     if(os.path.isfile(fileLocation+fileName+"-dates.pkl") and os.path.isfile(fileLocation+fileName+"-faces.pk1")):
                         self.processQueue.put(["O", fileLocation, fileName])
-                        time.sleep(2)
+                        time.sleep(1)
                     self.serverResponse.setText("Successfully initalized")
                 except:
                     self.serverResponse.setText("Input failed, try again!")

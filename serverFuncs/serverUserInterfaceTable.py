@@ -53,15 +53,25 @@ class GUI():
         #define array of Media objects
         self.mediaPlayers=[]
 
-        self.initScrollArea()
+        self.initScrollArea(1)
 
-    def initScrollArea(self):
-        self.scrollArea = pyS.QtWidgets.QScrollArea(self.homeWidget)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollAreaWidgetContents = pyS.QtWidgets.QWidget()
-        self.gridLayout = pyS.QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.mainGrid.addWidget(self.scrollArea,pyS.QtCore.Qt.AlignTop)
+    def initScrollArea(self,numRows):
+        self.gridTable = pyS.QtWidgets.QTableWidget(numRows,self.NUMROWS,self.homeWidget)
+        header = self.gridTable.horizontalHeader()
+        header.setMinimumSectionSize(400)
+        footer = self.gridTable.verticalHeader()
+        footer.setMinimumSectionSize(400)
+        self.gridTable.setIconSize(pyS.QtCore.QSize(400,400))
+        #self.gridTable.setMinimumWidth(1200)
+        self.mainGrid.addWidget(self.gridTable,pyS.QtCore.Qt.AlignTop)
+
+
+        # self.scrollArea = pyS.QtWidgets.QScrollArea(self.homeWidget)
+        # self.scrollArea.setWidgetResizable(True)
+        # self.scrollAreaWidgetContents = pyS.QtWidgets.QWidget()
+        # self.gridLayout = pyS.QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
+        # self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        # self.mainGrid.addWidget(self.scrollArea,pyS.QtCore.Qt.AlignTop)
 
     def buttonClick(self):
         userInput = self.entry.text()
@@ -72,10 +82,10 @@ class GUI():
 
     def addMedia(self,serverResults):
         #delete widget and rebuild when new images called
-        self.mainGrid.removeWidget(self.scrollArea)
-        self.scrollArea.deleteLater()
-        self.scrollArea=None
-        self.initScrollArea()
+        self.mainGrid.removeWidget(self.gridTable)
+        self.gridTable.deleteLater()
+        self.gridTable=None
+        self.initScrollArea(math.ceil(len(serverResults)/3))
 
         self.homeWidget.show()
         self.mediaPlayers = []
@@ -90,18 +100,22 @@ class GUI():
 
             if serverResults[i][0].split(".")[-1]=="MP4":
 
+                # self.mediaPlayers.append(playerWidget.VideoPlayer(serverResults[i][0]))
+                # media=pyS.QtWidgets.QStyledItemDelegate(self.mediaPlayers[-1].getWidget())
+
+                # #item.setSizeHint(pyS.QtCore.QSize(400,400))
+                # self.gridTable.setItem(math.trunc(i/self.NUMROWS), posInRow, item)
+
                 self.mediaPlayers.append(playerWidget.VideoPlayer(serverResults[i][0]))
-                self.gridLayout.addWidget(self.mediaPlayers[-1].getWidget(),math.trunc(i/self.NUMROWS), posInRow)
+                self.gridTable.setCellWidget(math.trunc(i/self.NUMROWS), posInRow, self.mediaPlayers[-1].getWidget())
                 
             else:
 
-                imageLabel = pyS.QtWidgets.QLabel()
                 image = pyS.QtGui.QPixmap(serverResults[i][0].replace("\\","/"))
                 image = image.scaled(400,400, pyS.QtCore.Qt.KeepAspectRatio)
-                imageLabel.setPixmap(image)
-                imageLabel.setMinimumSize(400, 400)
-                imageLabel.setMaximumSize(400, 400)
-                self.gridLayout.addWidget(imageLabel,math.trunc(i/self.NUMROWS), posInRow)
+                item = pyS.QtWidgets.QTableWidgetItem(pyS.QtGui.QIcon(image),"P")
+                item.setSizeHint(pyS.QtCore.QSize(400,400))
+                self.gridTable.setItem(math.trunc(i/self.NUMROWS), posInRow, item)
 
             posInRow+=1
 

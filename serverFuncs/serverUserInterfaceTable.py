@@ -113,7 +113,7 @@ class GUI():
 
                 image = pyS.QtGui.QPixmap(serverResults[i][0].replace("\\","/"))
                 image = image.scaled(400,400, pyS.QtCore.Qt.KeepAspectRatio)
-                item = pyS.QtWidgets.QTableWidgetItem(pyS.QtGui.QIcon(image),"P")
+                item = pyS.QtWidgets.QTableWidgetItem(pyS.QtGui.QIcon(image),"")
                 item.setSizeHint(pyS.QtCore.QSize(400,400))
                 self.gridTable.setItem(math.trunc(i/self.NUMROWS), posInRow, item)
 

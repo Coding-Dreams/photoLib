@@ -80,43 +80,44 @@
 
             objects.forEach((object)=>{
 
+              targetElement=object.target;
+
               if(object.isIntersecting){
 
-                targetElement=object.target;
-                imageElement=targetElement.getElementsByTagName("*").namedItem("ImageArray");
-                imageDivHTML=imageElement.innerHTML;
-                images=imageElement.innerHTML.split(',,');
-                imageElement.innerHTML="";
+                image=targetElement.id;
+                //imageElement=targetElement.getElementsByTagName("*").namedItem("imageAddress");
+                //image=imageElement.innerHTML;
                 //log.innerHTML=images;
                 //console.appendChild(log);
 
-                for(image of images){
-                  image=image.replace(',','');
-                  mediaContainer=document.createElement('div');
-                  mediaContainer.className="widgetContent";
-                  if( image.split('.')[1].toUpperCase() === 'MP4'){
-                    source=document.createElement('source');
-                    source.type="video/mp4";
-                    source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
-                    vid=document.createElement('video');
-                    vid.className="widgetContent";
-                    vid.style.width="100%";
-                    vid.style.height="100%";
-                    vid.rotate="90"
-                    vid.controls=' '
-                    vid.preload='auto';
-                    vid.append(source);
-                    mediaContainer.append(vid);
-                  }else{
-                    img=document.createElement('img');
-                    img.style.width="100%";
-                    img.style.height="100%";
-                    img.class="widgetContent";
-                    img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
-                    mediaContainer.append(img);
-                  };
-                  object.target.appendChild(mediaContainer);
+                image=image.replace(',','');
+                if( image.split('.')[1].toUpperCase() === 'MP4'){
+                  source=document.createElement('source');
+                  source.type="video/mp4";
+                  source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
+                  vid=document.createElement('video');
+                  vid.className="widgetContent";
+                  vid.style.width="100%";
+                  vid.style.height="100%";
+                  vid.rotate="90"
+                  vid.controls=' '
+                  vid.preload='auto';
+                  vid.id='content';
+                  vid.append(source);
+                  targetElement.appendChild(vid);
+                }else{
+                  img=document.createElement('img');
+                  img.style.width="100%";
+                  img.style.height="100%";
+                  img.class="widgetContent";
+                  img.id='content';
+                  img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
+                  targetElement.appendChild(img);
                 };
+
+              }else if(!object.isIntersecting){
+
+                targetElement.firstChild.remove();
 
               };
 
@@ -124,11 +125,11 @@
 
           };
 
-          for(const images of image_array){
+          for(const image of image_array){
 
-            var textDiv = document.createElement('div');
-            textDiv.innerHTML=images;
-            textDiv.id="ImageArray";
+            //var textDiv = document.createElement('div');
+            //textDiv.innerHTML=image;
+            //textDiv.id="imageAddress";
             imageContainer=document.createElement('div');
             //imageContainer.height="2500";
             //imageContainer.width="1000";
@@ -136,9 +137,9 @@
             //imageContainer.minWidth="1000";
             //imageContainer.maxHeight="2500";
             //imageContainer.maxWidth="1000";
-            imageContainer.className="div-imageGal";
-            imageContainer.id="AnImageContainer";
-            imageContainer.appendChild(textDiv);
+            imageContainer.className="widgetContent";
+            imageContainer.id=image;
+            //imageContainer.appendChild(textDiv);
             container.appendChild(imageContainer);
             arrayOfImageContainers.push(imageContainer);
 
@@ -147,7 +148,8 @@
           observerOptions={
             root: document.querySelector("#scrollArea"),
             rootMargin:"0px",
-            threshold:0.01,
+            threshold:0.05,
+            delay:100,
           };
 
           const observer = new IntersectionObserver(observedFunction, observerOptions);

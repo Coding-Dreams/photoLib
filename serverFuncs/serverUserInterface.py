@@ -63,6 +63,7 @@ class GUI():
             elif(command == "Q"):
                 self.processQueue.put(["Q",None,None])
                 print("GUI: GUI SHUTTING DOWN")
+                exit()
 
             #save function
             elif(command == "S" and self.serverStatus):
@@ -124,7 +125,7 @@ class GUI():
         
         @self.APP.route('/getImageArray', methods=['GET'])
         def getArr():
-            return jsonify({"imageLocs":tools.split(self.resultsToDisplay,10)}) #jsonify(self.resultsToDisplay)
+            return jsonify({"imageLocs":self.resultsToDisplay}) #jsonify(self.resultsToDisplay)
  
         @self.APP.route('/getImage/<path:filename>',methods=['GET'])
         def imageShake(filename):

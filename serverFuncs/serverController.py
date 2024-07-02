@@ -44,7 +44,7 @@ def controller(processQueue, serverIntializedEvent, returnQueue):
 
         #Stop server
         elif(serverInput[0].upper() == "Q"):
-            print("SERVER: Stopping Server")
+            print("DATABASE: Stopping Database")
             serverIntializedEvent.clear()
             break
 

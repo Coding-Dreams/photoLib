@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import serverController
 #import serverUserInterface
-import serverUserInterfaceTable as serverUserInterface
+import serverUserInterface
 import bulkConverter
 
 if __name__ == '__main__':
@@ -23,6 +23,9 @@ if __name__ == '__main__':
     print("MAIN: BULK IMPORTER DONE")
 
     databaseProcess.join()
-    userInterfaceProcess.join()
+    print("MAIN: DATABASE SHUTDOWN")
 
-    print("MAIN: SHUTTING DOWN")
+    userInterfaceProcess.terminate()
+    print("MAIN: GUI SHUTDOWN")
+
+    print("MAIN: MAIN SHUTTING DOWN")

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<head>
+<!--
+<style>
+    div.gallery {
+      margin: 5px;
+      border: 1px solid #ccc;
+      float: left;
+      width: 180px;
+    }
+    
+    div.gallery:hover {
+      border: 1px solid #777;
+    }
+    
+    div.gallery img {
+      width: 100%;
+      height: auto;
+    }
+    
+    div.desc {
+      padding: 15px;
+      text-align: center;
+    }
+    </style> 
+-->
+  <style>
+    .div-imageGal {
+      width:100%;
+      min-height: 500px;
+    };
+  </style>
+  <style>
+    .widgetContent {
+      max-width: 500px;
+      max-height: 500px;
+      width: 500px;
+      height: 500px;
+      display: inline-flex;
+      object-fit: contain;
+    }
+  </style>
+    
+    <div id="console"></div>
+
+    <div class="buttonIn" style="line-height:1.8">
+      <form method="post" enctype="multipart/form-data">
+        <input type="text" name=shit style= "float: left; width: 200px;" id="command" placeholder="Command Here">
+        <input type="submit">
+        <br>
+        <textarea id="ServerStatus" readonly="readonly" rows="1" cols="10">{{serverStatus}}</textarea>
+        <textarea id="ServerCommandResult" readonly="readonly" rows="1" cols="100">{{serverResponse}}</textarea>
+    </div>
+    <br>
+    </head>
+    <!--<form method="uploadimage"  enctype="multipart/form-data"> -->
+    <body>
+    <div class="div-imageGal" id="imageGal"></div>
+      <script type="text/javascript">
+
+        const console=document.getElementById('console');
+
+        window.onload=async function(){
+          var image_array=[];
+
+          await fetch("{{ url_for('getArr') }}")
+          .then(response => response.json()).then(data => {
+          image_array = data.imageLocs;
+          });
+
+          const container = document.getElementById('imageGal');
+
+          log=document.createElement('div');
+          //log.innerHTML=image_array;
+          //console.appendChild(log);
+
+          let arrayOfImageContainers=[];
+
+          async function observedFunction(objects,observer){
+
+            objects.forEach((object)=>{
+
+              if(object.isIntersecting){
+
+                targetElement=object.target;
+                imageElement=targetElement.getElementsByTagName("*").namedItem("ImageArray");
+                imageDivHTML=imageElement.innerHTML;
+                images=imageElement.innerHTML.split(',,');
+                imageElement.innerHTML="";
+                //log.innerHTML=images;
+                //console.appendChild(log);
+
+                for(image of images){
+                  image=image.replace(',','');
+                  mediaContainer=document.createElement('div');
+                  mediaContainer.className="widgetContent";
+                  if( image.split('.')[1].toUpperCase() === 'MP4'){
+                    source=document.createElement('source');
+                    source.type="video/mp4";
+                    source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
+                    vid=document.createElement('video');
+                    vid.className="widgetContent";
+                    vid.style.width="100%";
+                    vid.style.height="100%";
+                    vid.rotate="90"
+                    vid.controls=' '
+                    vid.preload='auto';
+                    vid.append(source);
+                    mediaContainer.append(vid);
+                  }else{
+                    img=document.createElement('img');
+                    img.style.width="100%";
+                    img.style.height="100%";
+                    img.class="widgetContent";
+                    img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
+                    mediaContainer.append(img);
+                  };
+                  object.target.appendChild(mediaContainer);
+                };
+
+              };
+
+            });
+
+          };
+
+          for(const images of image_array){
+
+            var textDiv = document.createElement('div');
+            textDiv.innerHTML=images;
+            textDiv.id="ImageArray";
+            imageContainer=document.createElement('div');
+            //imageContainer.height="2500";
+            //imageContainer.width="1000";
+            //imageContainer.minHeight="2500";
+            //imageContainer.minWidth="1000";
+            //imageContainer.maxHeight="2500";
+            //imageContainer.maxWidth="1000";
+            imageContainer.className="div-imageGal";
+            imageContainer.id="AnImageContainer";
+            imageContainer.appendChild(textDiv);
+            container.appendChild(imageContainer);
+            arrayOfImageContainers.push(imageContainer);
+
+          };
+
+          observerOptions={
+            root: document.querySelector("#scrollArea"),
+            rootMargin:"0px",
+            threshold:0.01,
+          };
+
+          const observer = new IntersectionObserver(observedFunction, observerOptions);
+
+          for(const child of arrayOfImageContainers){
+
+            observer.observe(child);
+
+          };
+        }
+      </script>
+      <noscript>Sorry, your browser does not support JavaScript!</noscript>
+    </body>
+  </form>

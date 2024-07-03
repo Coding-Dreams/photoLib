@@ -133,7 +133,7 @@ class GUI():
             print(self.IMAGEFILELOC)
             return send_from_directory(self.IMAGEFILELOC,filename.replace('D:/converted/',''))
         
-        self.APP.run()
+        self.APP.run(threaded=True)
 
 def main(processQueue, startEvent, returnQueue):
     serverGUI = GUI(processQueue, startEvent, returnQueue)

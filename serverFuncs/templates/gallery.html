@@ -24,6 +24,17 @@
     }
     </style> 
 -->
+
+  <style>
+    .datePopup {
+      z-index:-1;
+      position: fixed;
+      right:0%;
+      top:100%;
+      min-height:100px;
+      min-width:300px;
+    }
+  </style>
   <style>
     .div-imageGal {
       width:100%;
@@ -32,12 +43,19 @@
   </style>
   <style>
     .widgetContent {
+      min-height:500px;
+      min-width:500px;
       max-width: 500px;
       max-height: 500px;
-      width: 500px;
-      height: 500px;
       display: inline-flex;
+      justify-content: center;
+    }
+  </style>
+  <style>
+    .imageRules{
       object-fit: contain;
+      max-width: 500px;
+      max-height: 500px;
     }
   </style>
     
@@ -55,6 +73,11 @@
     </head>
     <!--<form method="uploadimage"  enctype="multipart/form-data"> -->
     <body>
+    <iframe id="DateShower" class="datePopup">
+      <textarea>
+        I ate my own Pants LOL
+      </textarea>
+    </iframe>
     <div class="div-imageGal" id="imageGal"></div>
       <script type="text/javascript">
 
@@ -96,9 +119,7 @@
                   source.type="video/mp4";
                   source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
                   vid=document.createElement('video');
-                  vid.className="widgetContent";
-                  vid.style.width="100%";
-                  vid.style.height="100%";
+                  vid.classList.add("imageRules");
                   vid.rotate="90"
                   vid.controls=' '
                   vid.preload='auto';
@@ -107,9 +128,7 @@
                   targetElement.appendChild(vid);
                 }else{
                   img=document.createElement('img');
-                  img.style.width="100%";
-                  img.style.height="100%";
-                  img.class="widgetContent";
+                  img.classList.add("imageRules");
                   img.id='content';
                   img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
                   targetElement.appendChild(img);
@@ -117,7 +136,10 @@
 
               }else if(!object.isIntersecting){
 
-                targetElement.firstChild.remove();
+                try{
+                  targetElement.firstChild.remove();
+                }
+                catch(e){};
 
               };
 

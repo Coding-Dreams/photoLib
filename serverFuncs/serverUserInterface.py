@@ -7,15 +7,20 @@ import time
 import os
 import tools
 import sys
-
+from waitress import serve
+#Linux Only
+#import gunicornServer as gS
 
 
 class GUI():
 
     def __init__(self, processQueue,serverInitializedEvent,resultQueue):
         #def app for flask
+        #self.OPTIONS={"bind":"http://127.0.0.1:5000/",
+        #              "workers":4}
         self.IMAGEFILELOC=os.path.abspath("D:\\converted")
         self.APP = Flask(__name__, static_folder=self.IMAGEFILELOC,template_folder='templates')
+        #self.guniApp=gS.GunicornApp(self.APP, self.OPTIONS)
 
         #initialize Queues and events
         self.processQueue=processQueue
@@ -129,11 +134,13 @@ class GUI():
  
         @self.APP.route('/getImage/<path:filename>',methods=['GET'])
         def imageShake(filename):
-            print(filename)
-            print(self.IMAGEFILELOC)
+            #print(filename)
+            #print(self.IMAGEFILELOC)
             return send_from_directory(self.IMAGEFILELOC,filename.replace('D:/converted/',''))
         
-        self.APP.run(threaded=True)
+        serve(self.APP, threads=12, port=5000)
+        #self.guniApp.run()
+        #self.APP.run(threaded=True)
 
 def main(processQueue, startEvent, returnQueue):
     serverGUI = GUI(processQueue, startEvent, returnQueue)

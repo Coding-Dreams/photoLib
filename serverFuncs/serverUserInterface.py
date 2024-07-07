@@ -1,13 +1,16 @@
 from flask import render_template
 from flask import send_from_directory
+from flask import send_file
 from flask import Flask
 from flask import request as rq
 from flask import jsonify
 import time
 import os
-import tools
-import sys
+import ffmpy
 from waitress import serve
+import threading
+import io
+import subprocess
 #Linux Only
 #import gunicornServer as gS
 
@@ -137,6 +140,26 @@ class GUI():
             #print(filename)
             #print(self.IMAGEFILELOC)
             return send_from_directory(self.IMAGEFILELOC,filename.replace('D:/converted/',''))
+        
+        @self.APP.route('/getThumbnail/<path:filename>',methods=['GET'])
+        def getThumbnail(filename):
+            stdout=io.BytesIO()
+            script=ffmpy.FFmpeg(global_options=["-y","-loglevel error"],
+                                    inputs={filename:None},
+                                    outputs={"pipe:1":"-ss 00:00:01.000 -vframes 1 -c:v png -f image2pipe"})
+            stdout,garbage=script.run(stdout=subprocess.PIPE)
+            del garbage
+            translated=io.BytesIO(stdout)
+            return send_file(translated, mimetype='image/png')
+
+            """
+            uniqID=threading.get_ident()
+            ffscript=ffmpy.FFmpeg(global_options=["-y","-loglevel error"],
+                         inputs={filename:None},
+                         outputs={f"{self.IMAGEFILELOC}\\thumbnails\\thumbnail-{uniqID}.png":"-ss 00:00:01.000 -vframes 1"})
+            ffscript.run()
+            return send_file(f"{self.IMAGEFILELOC}\\thumbnails\\thumbnail-{uniqID}.png")
+            """
         
         serve(self.APP, threads=12, port=5000)
         #self.guniApp.run()

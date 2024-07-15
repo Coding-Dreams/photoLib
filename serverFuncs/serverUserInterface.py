@@ -22,7 +22,8 @@ class GUI():
         #self.OPTIONS={"bind":"http://127.0.0.1:5000/",
         #              "workers":4}
         self.IMAGEFILELOC=os.path.abspath("D:\\converted")
-        self.APP = Flask(__name__, static_folder=self.IMAGEFILELOC,template_folder='templates')
+        self.TEMPLATEFOLDER=os.path.abspath("C:\\Users\\nvbue\\Documents\\Niccolo von Bueren\\Projects\\photoLib\\serverFuncs\\templates\\")
+        self.APP = Flask(__name__, static_folder=self.IMAGEFILELOC,template_folder=self.TEMPLATEFOLDER)
         #self.guniApp=gS.GunicornApp(self.APP, self.OPTIONS)
 
         #initialize Queues and events
@@ -130,6 +131,10 @@ class GUI():
                     serverResponse=self.commandStatus)
             #else:
             return render_template('gallery.html')
+        
+        @self.APP.route('/getJQuery', methods=['GET'])
+        def getJQuery():
+            return send_from_directory(self.TEMPLATEFOLDER,"jquery-3.7.1.min.js")
         
         @self.APP.route('/getImageArray', methods=['GET'])
         def getArr():

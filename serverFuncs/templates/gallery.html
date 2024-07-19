@@ -70,24 +70,104 @@
     </head>
     <!--<form method="uploadimage"  enctype="multipart/form-data"> -->
     <body>
+    <div id="dateShower" class="datePopup"></div>
     <div class="div-imageGal" id="imageGal"></div>
       <script type="text/javascript">
 
-        const console=document.getElementById('console');
+      var container = document.getElementById('imageGal');
 
+      class listener{
+          constructor(image_array,container,dateShower){
+            this.image_array=image_array;
+            this.container=container;
+            this.dateShower=dateShower;
+          };
+          changeArr(image_array){
+            this.image_array=image_array;
+          };
+          makeListener(){
+            var timer = null;
+              //credit for timer method: https://stackoverflow.com/questions/4620906/how-do-i-know-when-ive-stopped-scrolling
+            window.addEventListener('scroll', ()=>{
+              let totalImg=Math.ceil((-this.container.getBoundingClientRect().top+(window.innerHeight/2))*(this.container.offsetWidth)/250000);
+              let date=String(this.image_array[totalImg]).split('\\');
+              this.dateShower.innerHTML=String(date[date.length-4])+"-"+String(date[date.length-3]+"-"+String(date[date.length-2]));
+              if(timer !== null) {
+                  clearTimeout(timer);
+              }
+              timer = setTimeout(() => {
+                var startIdx=Math.max(0, Math.floor(-this.container.getBoundingClientRect().top/503.6)*Math.floor(this.container.offsetWidth/500));
+                var endIdx=Math.floor((-this.container.getBoundingClientRect().top+window.innerHeight)/503.6)*Math.floor(this.container.offsetWidth/500)+3;
+                if(this.container.childElementCount<=endIdx){endIdx=this.container.childElementCount-1;};
+                for(let i=startIdx; i<=endIdx; i++){
+                  loadImage(this.image_array[i],i);
+                };
+                }, 250);
+            }, false);
+          };
+
+          //end of function
+        };
+
+        var listenerObject = new listener([],container,document.getElementById('dateShower'));
+        listenerObject.makeListener();
+
+        const console=document.getElementById('console');
+        log=document.createElement('div');
+        console.append(log)
+
+        //function for loading an image, passing date of image and idx for child div.
+        loadImage=async function(date,childIdx){
+            imageGal=document.getElementById('imageGal');
+            let imageContainer=(imageGal.children)[childIdx];
+            needContent=function(imageContainer){
+              try{
+                if(imageContainer.childNodes.length != 0){return false;}
+                else{return true;};
+              }catch{
+                setTimeout(function(){
+                    {return needContent(imageContainer);}
+                }, 10);
+              }
+            }
+            if(!needContent(imageContainer)){return;};
+            date=String(date);
+            date=date.replace(',',"");
+            if( date.split('.')[1].toUpperCase() === 'MP4'){
+                  source=document.createElement('source');
+                  source.type="video/mp4";
+                  source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', date);
+                  vid=document.createElement('video');
+                  vid.classList.add("imageRules");
+                  vid.rotate="90";
+                  vid.controls=true;
+                  vid.id='content';
+                  vid.appendChild(source);
+                  imageContainer.appendChild(vid);
+            }else{
+                  img=document.createElement('img');
+                  img.classList.add("imageRules");
+                  img.id='content';
+                  img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', date);
+                  imageContainer.appendChild(img);
+                };
+        };
+
+        //When window is loaded, run the get function to get images and continue loading
         window.onload=async function(){
-          var image_array=[];
+
+          let image_array=[];
 
           await fetch("{{ url_for('getArr') }}")
           .then(response => response.json()).then(data => {
           image_array = data.imageLocs;
           });
 
-          const container = document.getElementById('imageGal');
-
           //log=document.createElement('div');
           //log.innerHTML=typeof image_array;
           //console.appendChild(log);
+
+          listenerObject.changeArr(image_array);
 
           for(image of image_array){
 
@@ -96,35 +176,28 @@
             imageContainer.id=image;
 
             image=imageContainer.id.replace(',','');
-;
-            if( image.split('.')[1].toUpperCase() === 'MP4'){
-                  source=document.createElement('source');
-                  source.type="video/mp4";
-                  source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
-                  vid=document.createElement('video');
-                  vid.classList.add("imageRules");
-                  vid.rotate="90";
-                  vid.controls=true;
-                  vid.preload='none';
-                  vid.id='content';
-                  vid.poster="{{url_for('getThumbnail',filename='ADDSTRING')}}".replace('ADDSTRING', image);
-                  vid.append(source);
-                  imageContainer.appendChild(vid);
-            }else{
-                  img=document.createElement('img');
-                  img.classList.add("imageRules");
-                  img.id='content';
-                  img.loading='lazy';
-                  img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
-                  imageContainer.appendChild(img);
-                };
 
             container.appendChild(imageContainer);
 
           };
-        }
+
+          numPerRow=Math.floor(document.getElementById('imageGal').offsetWidth/500);
+          numPerColm=Math.ceil(window.screen.height/500);
+
+          //preload the first few images that the user can see.
+          for(let i=0; i<numPerColm*numPerRow; i++){
+
+            if(i>image_array.length){
+                break;
+            };
+
+            loadImage(image_array[i],i);
+
+          };
+
+        };
+
       </script>
       <noscript>Sorry, your browser does not support JavaScript!</noscript>
     </body>
-    <div id="dateShower" class="datePopup"></div>
   </form>

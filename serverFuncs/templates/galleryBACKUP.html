@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<head>
+<!--
+<style>
+    div.gallery {
+      margin: 5px;
+      border: 1px solid #ccc;
+      float: left;
+      width: 180px;
+    }
+    
+    div.gallery:hover {
+      border: 1px solid #777;
+    }
+    
+    div.gallery img {
+      width: 100%;
+      height: auto;
+    }
+    
+    div.desc {
+      padding: 15px;
+      text-align: center;
+    }
+    </style> 
+-->
+
+  <style>
+    .datePopup {
+      z-index:-1;
+      position: fixed;
+      right:0%;
+      top:100%;
+      min-height:100px;
+      min-width:300px;
+    }
+  </style>
+  <style>
+    .div-imageGal {
+      width:100%;
+      min-height: 500px;
+    };
+  </style>
+  <style>
+    .widgetContent {
+      min-height:500px;
+      min-width:500px;
+      max-width: 500px;
+      max-height: 500px;
+      display: inline-flex;
+      justify-content: center;
+    }
+  </style>
+  <style>
+    .imageRules{
+      object-fit: contain;
+      max-width: 500px;
+      max-height: 500px;
+    }
+  </style>
+    
+    <div id="console"></div>
+
+    <div class="buttonIn" style="line-height:1.8">
+      <form method="post" enctype="multipart/form-data">
+        <input type="text" name=shit style= "float: left; width: 200px;" id="command" placeholder="Command Here">
+        <input type="submit">
+        <br>
+        <textarea id="ServerStatus" readonly="readonly" rows="1" cols="10">{{serverStatus}}</textarea>
+        <textarea id="ServerCommandResult" readonly="readonly" rows="1" cols="100">{{serverResponse}}</textarea>
+    </div>
+    <br>
+    </head>
+    <!--<form method="uploadimage"  enctype="multipart/form-data"> -->
+    <body>
+    <iframe id="DateShower" class="datePopup">
+      <textarea>
+        I ate my own Pants LOL
+      </textarea>
+    </iframe>
+    <div class="div-imageGal" id="imageGal"></div>
+      <script type="text/javascript">
+
+        const console=document.getElementById('console');
+
+        window.onload=async function(){
+          var image_array=[];
+
+          await fetch("{{ url_for('getArr') }}")
+          .then(response => response.json()).then(data => {
+          image_array = data.imageLocs;
+          });
+
+          const container = document.getElementById('imageGal');
+
+          log=document.createElement('div');
+          //log.innerHTML=image_array;
+          //console.appendChild(log);
+
+          let arrayOfImageContainers=[];
+
+          async function observedFunction(objects,observer){
+
+            objects.forEach((object)=>{
+
+              targetElement=object.target;
+
+              if(object.isIntersecting){
+
+                image=targetElement.id;
+                //imageElement=targetElement.getElementsByTagName("*").namedItem("imageAddress");
+                //image=imageElement.innerHTML;
+                //log.innerHTML=images;
+                //console.appendChild(log);
+
+                image=image.replace(',','');
+                if( image.split('.')[1].toUpperCase() === 'MP4'){
+                  source=document.createElement('source');
+                  source.type="video/mp4";
+                  source.src="{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
+                  vid=document.createElement('video');
+                  vid.classList.add("imageRules");
+                  vid.rotate="90"
+                  vid.controls=' '
+                  vid.preload='auto';
+                  vid.id='content';
+                  vid.append(source);
+                  targetElement.appendChild(vid);
+                }else{
+                  img=document.createElement('img');
+                  img.classList.add("imageRules");
+                  img.id='content';
+                  img.src = "{{url_for('imageShake',filename='ADDSTRING')}}".replace('ADDSTRING', image);
+                  targetElement.appendChild(img);
+                };
+
+              }else if(!object.isIntersecting){
+
+                try{
+                  targetElement.firstChild.remove();
+                }
+                catch(e){};
+
+              };
+
+            });
+
+          };
+
+          for(const image of image_array){
+
+            imageContainer=document.createElement('div');
+            imageContainer.className="widgetContent";
+            imageContainer.id=image;
+            container.appendChild(imageContainer);
+            arrayOfImageContainers.push(imageContainer);
+
+          };
+
+          observerOptions={
+            root: document.querySelector("#scrollArea"),
+            rootMargin:"0px",
+            threshold:0.01,
+            delay:100,
+          };
+
+          const observer = new IntersectionObserver(observedFunction, observerOptions);
+
+          for(const child of arrayOfImageContainers){
+
+            observer.observe(child);
+
+          };
+        }
+      </script>
+      <noscript>Sorry, your browser does not support JavaScript!</noscript>
+    </body>
+  </form>

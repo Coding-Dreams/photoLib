@@ -38,6 +38,10 @@ def controller(processQueue, serverIntializedEvent, returnQueue):
             result = serverObject.getDate(serverInput[1])
             returnQueue.put(result)
 
+        elif(serverInput[0].upper() == "C"):
+            result = serverObject.getAllDates()
+            returnQueue.put(result)
+
         #Add Data
         elif(serverInput[0].upper() == "AD"):
             serverObject.addTo(serverInput[1])

@@ -82,6 +82,16 @@ class GUI():
                     self.commandStatus="Save Successful"
                 else:
                     self.commandStatus="USER ERROR: Invalid file path"
+            
+            elif(command == "C" and self.serverStatus):
+                self.processQueue.put(["C",None,None])
+                result=self.resultQueue.get()
+                if(result == None):
+                    self.commandStatus="No images in database"
+                else:
+                    self.commandStatus="Images found"
+                    #print(result)
+                    self.resultsToDisplay=result
 
             #Find face function
             elif(command == "FF" and self.serverStatus):
@@ -137,10 +147,10 @@ class GUI():
  
         @self.APP.route('/getImage/<path:filename>',methods=['GET'])
         def imageShake(filename):
-            #print(filename)
-            #print(self.IMAGEFILELOC)
             return send_from_directory(self.IMAGEFILELOC,filename.replace('D:/converted/',''))
         
+
+        #DEPRECATED: NOT IN USE
         @self.APP.route('/getThumbnail/<path:filename>',methods=['GET'])
         def getThumbnail(filename):
             stdout=io.BytesIO()
@@ -151,15 +161,6 @@ class GUI():
             del garbage
             translated=io.BytesIO(stdout)
             return send_file(translated, mimetype='image/png')
-
-            """
-            uniqID=threading.get_ident()
-            ffscript=ffmpy.FFmpeg(global_options=["-y","-loglevel error"],
-                         inputs={filename:None},
-                         outputs={f"{self.IMAGEFILELOC}\\thumbnails\\thumbnail-{uniqID}.png":"-ss 00:00:01.000 -vframes 1"})
-            ffscript.run()
-            return send_file(f"{self.IMAGEFILELOC}\\thumbnails\\thumbnail-{uniqID}.png")
-            """
         
         serve(self.APP, threads=12, port=5000)
         #self.guniApp.run()

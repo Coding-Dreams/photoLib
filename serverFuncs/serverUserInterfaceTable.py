@@ -1,3 +1,5 @@
+#DEPRECATED
+
 import PySide6 as pyS
 from PySide6 import *
 import pySide6VideoWidget as playerWidget

@@ -1,3 +1,4 @@
+import PIL.Image
 from flask import render_template
 from flask import send_from_directory
 from flask import send_file
@@ -8,9 +9,9 @@ import time
 import os
 import ffmpy
 from waitress import serve
-import threading
 import io
 import subprocess
+import PIL
 #Linux Only
 #import gunicornServer as gS
 
@@ -33,7 +34,7 @@ class GUI():
         self.serverStatus=self.serverInitializedEvent.is_set()
         self.commandStatus=""
 
-        self.resultsToDisplay=[['placeHolder\\test.png']]
+        self.resultsToDisplay=[[f'{self.IMAGEFILELOC}\\placeHolder\\test.jpg']]
 
 
     def isServerOn(self):
@@ -82,6 +83,16 @@ class GUI():
                     self.commandStatus="Save Successful"
                 else:
                     self.commandStatus="USER ERROR: Invalid file path"
+            
+            elif(command == "C" and self.serverStatus):
+                self.processQueue.put(["C",None,None])
+                result=self.resultQueue.get()
+                if(result == None):
+                    self.commandStatus="No images in database"
+                else:
+                    self.commandStatus="Images found"
+                    #print(result)
+                    self.resultsToDisplay=result
 
             #Find face function
             elif(command == "FF" and self.serverStatus):
@@ -130,17 +141,16 @@ class GUI():
                     serverResponse=self.commandStatus)
             #else:
             return render_template('gallery.html')
-        
+
         @self.APP.route('/getImageArray', methods=['GET'])
         def getArr():
             return jsonify({"imageLocs":self.resultsToDisplay}) #jsonify(self.resultsToDisplay)
  
         @self.APP.route('/getImage/<path:filename>',methods=['GET'])
         def imageShake(filename):
-            #print(filename)
-            #print(self.IMAGEFILELOC)
             return send_from_directory(self.IMAGEFILELOC,filename.replace('D:/converted/',''))
         
+        #DEPRECATED: NOT IN USE
         @self.APP.route('/getThumbnail/<path:filename>',methods=['GET'])
         def getThumbnail(filename):
             stdout=io.BytesIO()
@@ -151,17 +161,8 @@ class GUI():
             del garbage
             translated=io.BytesIO(stdout)
             return send_file(translated, mimetype='image/png')
-
-            """
-            uniqID=threading.get_ident()
-            ffscript=ffmpy.FFmpeg(global_options=["-y","-loglevel error"],
-                         inputs={filename:None},
-                         outputs={f"{self.IMAGEFILELOC}\\thumbnails\\thumbnail-{uniqID}.png":"-ss 00:00:01.000 -vframes 1"})
-            ffscript.run()
-            return send_file(f"{self.IMAGEFILELOC}\\thumbnails\\thumbnail-{uniqID}.png")
-            """
         
-        serve(self.APP, threads=12, port=5000)
+        serve(self.APP, threads=24, port=5000, outbuf_overflow=304857600, inbuf_overflow=104857600, cleanup_interval=3, channel_timeout=5)
         #self.guniApp.run()
         #self.APP.run(threaded=True)
 

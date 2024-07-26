@@ -29,9 +29,10 @@
     .datePopup {
       position: fixed;
       right:0;
-      top:85%;
+      top:95%;
       min-height:100px;
       min-width:300px;
+      font-size: 25px;
     }
   </style>
   <style>
@@ -81,6 +82,10 @@
             this.image_array=image_array;
             this.container=container;
             this.dateShower=dateShower;
+            this.previousEndIdx=NaN;
+            this.previousStartIdx=NaN;
+            this.scrollSpeedValue=0;
+            this.prior=Math.abs(this.container.getBoundingClientRect().top);
           };
           changeArr(image_array){
             this.image_array=image_array;
@@ -89,32 +94,86 @@
             var timer = null;
               //credit for timer method: https://stackoverflow.com/questions/4620906/how-do-i-know-when-ive-stopped-scrolling
             window.addEventListener('scroll', ()=>{
-              let totalImg=Math.ceil((-this.container.getBoundingClientRect().top+(window.innerHeight/2))*(this.container.offsetWidth)/250000);
-              let date=String(this.image_array[totalImg]).split('\\');
+              let dateImgIdx=Math.floor((-this.container.getBoundingClientRect().top+(window.innerHeight/2))/503.6)*Math.floor(this.container.offsetWidth/500);
+              let date=String(this.image_array[dateImgIdx]).split('\\');
               this.dateShower.innerHTML=String(date[date.length-4])+"-"+String(date[date.length-3]+"-"+String(date[date.length-2]));
               if(timer !== null) {
                   clearTimeout(timer);
               }
               timer = setTimeout(() => {
-                var startIdx=Math.max(0, Math.floor(-this.container.getBoundingClientRect().top/503.6)*Math.floor(this.container.offsetWidth/500));
-                var endIdx=Math.floor((-this.container.getBoundingClientRect().top+window.innerHeight)/503.6)*Math.floor(this.container.offsetWidth/500)+3;
-                if(this.container.childElementCount<=endIdx){endIdx=this.container.childElementCount-1;};
-                for(let i=startIdx; i<=endIdx; i++){
-                  loadImage(this.image_array[i],i);
+                //here 1000 is the additional buffer we want for images (500 for each row), 503.6 is considering the padding which SHOULD NOT EXIST!
+                var startIdx=Math.max(0, Math.floor((-this.container.getBoundingClientRect().top-1000)/503.6)*Math.floor(this.container.offsetWidth/500));
+                var endIdx=Math.floor((-this.container.getBoundingClientRect().top+window.innerHeight+1000)/503.6)*Math.floor(this.container.offsetWidth/500);
+                //this means this is the first time we are rendering
+                if(this.previousEndIdx==NaN || this.previousStartIdx==NaN){}
+                else{
+                  //this means we moved down
+                  if(startIdx>this.previousStartIdx){
+                    //if we moved down far enough to surpass the previous' end of render index, we remove all previously rendered content.
+                    if(startIdx>this.previousEndIdx){
+                      for(let k = this.previousStartIdx; k<=this.previousEndIdx; k++){
+                        unloadImage(k);
+                      };
+                    }
+                    //this means we moved down but not far enough to clear the previous endIdx
+                    else{
+                      for(let k = this.previousStartIdx; k<startIdx; k++){
+                        unloadImage(k);
+                      };
+                    };
+                  }
+                  //this means we scrolled up
+                  else if(startIdx<this.previousStartIdx){
+                    //this means we scrolled so far we suprassed the previous' render
+                    if(endIdx<this.previousStartIdx){
+                      for(let k = this.previousStartIdx; k<=this.previousEndIdx; k++){
+                        unloadImage(k);
+                      };
+                    }
+                    //else this means we scrolled up, but not enough to clear the previous render.
+                    else{
+                      for(let k = endIdx+1; k <= this.previousEndIdx; k++){
+                        unloadImage(k);
+                      }
+                    }
+
+                  }
+                  //this means we did not move enough to change anything
+                  else{};
                 };
-                }, 250);
+                if(this.container.childElementCount<=endIdx){endIdx=this.container.childElementCount-1;};
+                if(this.scrollSpeedValue<=100){
+                  for(let i=startIdx; i<=endIdx; i++){
+                    loadImage(this.image_array[i],i);
+                  };
+                };
+                this.previousStartIdx=startIdx;
+                this.previousEndIdx=endIdx;
+                }, 10);
             }, false);
           };
 
-          //end of function
+        scrollSpeed(){
+          let currentPos=Math.abs(this.container.getBoundingClientRect().top);
+          this.scrollSpeedValue=Math.abs(currentPos-this.prior);
+          this.prior=currentPos;
         };
+        //end of class
+      };
 
         var listenerObject = new listener([],container,document.getElementById('dateShower'));
         listenerObject.makeListener();
+        window.setInterval(()=>listenerObject.scrollSpeed(),2);
 
         const console=document.getElementById('console');
         log=document.createElement('div');
         console.append(log)
+
+        unloadImage=async function(idx){
+          imageGal=document.getElementById('imageGal');
+          let imageContainer=(imageGal.children)[idx];
+          delete(imageContainer.removeChild(imageContainer.firstChild));
+        };
 
         //function for loading an image, passing date of image and idx for child div.
         loadImage=async function(date,childIdx){

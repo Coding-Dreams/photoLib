@@ -60,12 +60,26 @@ class serverDatabase:
     def getDate(self, date:str):
         date = date.split("-")
         try:
-            return self.yearDict[date[0]][date[1]][date[2]]
+            return self.yearDict[date[0]][date[1]][date[2]].copy()
         except KeyError:
             return None
         except:
             print("SERVER ERROR: getRow function had an issue w/ "+date+".")
             return None
+        
+    def getAllDates(self):
+        result=[]
+        years=list(self.yearDict.keys())
+        years.sort()
+        for year in years[1:]:
+            months=list(self.yearDict[year].keys())
+            months.sort()
+            for month in months:
+                days=list(self.yearDict[year][month].keys())
+                days.sort()
+                for day in days:
+                    result=result+self.yearDict[year][month][day]
+        return result
         
     def getName(self):
         return self.databaseName

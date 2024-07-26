@@ -84,6 +84,8 @@
             this.dateShower=dateShower;
             this.previousEndIdx=NaN;
             this.previousStartIdx=NaN;
+            this.scrollSpeedValue=0;
+            this.prior=Math.abs(this.container.getBoundingClientRect().top);
           };
           changeArr(image_array){
             this.image_array=image_array;
@@ -140,20 +142,28 @@
                   else{};
                 };
                 if(this.container.childElementCount<=endIdx){endIdx=this.container.childElementCount-1;};
-                for(let i=startIdx; i<=endIdx; i++){
-                  loadImage(this.image_array[i],i);
+                if(this.scrollSpeedValue<=100){
+                  for(let i=startIdx; i<=endIdx; i++){
+                    loadImage(this.image_array[i],i);
+                  };
                 };
                 this.previousStartIdx=startIdx;
                 this.previousEndIdx=endIdx;
-                }, 15);
+                }, 10);
             }, false);
           };
 
-          //end of function
+        scrollSpeed(){
+          let currentPos=Math.abs(this.container.getBoundingClientRect().top);
+          this.scrollSpeedValue=Math.abs(currentPos-this.prior);
+          this.prior=currentPos;
         };
+        //end of class
+      };
 
         var listenerObject = new listener([],container,document.getElementById('dateShower'));
         listenerObject.makeListener();
+        window.setInterval(()=>listenerObject.scrollSpeed(),2);
 
         const console=document.getElementById('console');
         log=document.createElement('div');
@@ -162,7 +172,7 @@
         unloadImage=async function(idx){
           imageGal=document.getElementById('imageGal');
           let imageContainer=(imageGal.children)[idx];
-          imageContainer.removeChild(imageContainer.firstChild);
+          delete(imageContainer.removeChild(imageContainer.firstChild));
         };
 
         //function for loading an image, passing date of image and idx for child div.

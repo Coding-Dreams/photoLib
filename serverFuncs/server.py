@@ -72,8 +72,12 @@ class serverDatabase:
         years=list(self.yearDict.keys())
         years.sort()
         for year in years[1:]:
-            for month in list(self.yearDict[year].keys()):
-                for day in list(self.yearDict[year][month].keys()):
+            months=list(self.yearDict[year].keys())
+            months.sort()
+            for month in months:
+                days=list(self.yearDict[year][month].keys())
+                days.sort()
+                for day in days:
                     result=result+self.yearDict[year][month][day]
         return result
         

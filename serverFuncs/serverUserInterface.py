@@ -1,4 +1,3 @@
-import PIL.Image
 from flask import render_template
 from flask import send_from_directory
 from flask import send_file
@@ -7,11 +6,7 @@ from flask import request as rq
 from flask import jsonify
 import time
 import os
-import ffmpy
 from waitress import serve
-import io
-import subprocess
-import PIL
 #Linux Only
 #import gunicornServer as gS
 
@@ -150,6 +145,7 @@ class GUI():
         def imageShake(filename):
             return send_from_directory(self.IMAGEFILELOC,filename.replace('D:/converted/',''))
         
+        """
         #DEPRECATED: NOT IN USE
         @self.APP.route('/getThumbnail/<path:filename>',methods=['GET'])
         def getThumbnail(filename):
@@ -161,6 +157,7 @@ class GUI():
             del garbage
             translated=io.BytesIO(stdout)
             return send_file(translated, mimetype='image/png')
+        """
         
         serve(self.APP, threads=24, port=5000, outbuf_overflow=304857600, inbuf_overflow=104857600, cleanup_interval=3, channel_timeout=5)
         #self.guniApp.run()
